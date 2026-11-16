@@ -1,6 +1,8 @@
 import os
+import argparse
 from dotenv import load_dotenv
 from openai import OpenAI
+
 
 load_dotenv()
 
@@ -17,28 +19,36 @@ def main():
         api_key=api_key
     )
 
-    content = "Why is Boot.dev such a great place to learn backend development? Use one paragraph maximum."
+    parser = argparse.ArgumentParser(description="Chatbot")
+    parser.add_argument("user_prompt", type=str, help="User prompt")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+
+    user_prompt = str(parser.parse_args().user_prompt)
+    is_verbose = bool(parser.parse_args().verbose)
+    print(is_verbose)
+    messages = [
+        {
+            "role": "user",
+            "content": user_prompt
+        },
+    ]
 
     response = client.chat.completions.create(
         model="openrouter/free",
-        messages= [
-            {
-                "role": "user",
-                "content": content,
-            }
-        ],
+        messages=messages,
     )
 
     if response.usage == None:
         raise RuntimeError("Usage tidak ditemukan!")
     
-    
-    print(f"User prompt: {content}")
-    print(f"Prompt tokens: {response.usage.prompt_tokens}")
-    print(f"Response tokens: {response.usage.completion_tokens}")
-    print("Response: ")
-    print(response.choices[0].message.content)
-
+    if is_verbose:
+        print(f"User prompt: {user_prompt}")
+        print(f"Prompt tokens: {response.usage.prompt_tokens}")
+        print(f"Response tokens: {response.usage.completion_tokens}")
+        print("Response: ")
+        print(response.choices[0].message.content)
+    else:
+        print(response.choices[0].message.content)
 
 
 if __name__ == "__main__":
