@@ -2,6 +2,7 @@ import os
 import argparse
 from dotenv import load_dotenv
 from openai import OpenAI
+from prompts import system_prompt 
 
 
 load_dotenv()
@@ -27,10 +28,8 @@ def main():
     is_verbose = bool(parser.parse_args().verbose)
     print(is_verbose)
     messages = [
-        {
-            "role": "user",
-            "content": user_prompt
-        },
+        {"role": "user", "content": user_prompt},
+        {"role": "system", "content": system_prompt}
     ]
 
     response = client.chat.completions.create(
