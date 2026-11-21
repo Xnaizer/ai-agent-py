@@ -1,11 +1,9 @@
 import os
-import json
 import argparse
 from dotenv import load_dotenv
 from openai import OpenAI
 from prompts import system_prompt 
-from call_function import available_functions
-
+from call_function import available_functions, call_function
 
 load_dotenv()
 
@@ -34,31 +32,48 @@ def main():
         {"role": "user", "content": user_prompt},
     ]
 
-    response = client.chat.completions.create(
-        model="openrouter/free",
-        messages=messages,
-        tools=available_functions,
-    )
-
-    if response.usage == None:
-        raise RuntimeError("Usage tidak ditemukan!")
-
-    message = response.choices[0].message
-    
-    if is_verbose:
-        print(f"User prompt: {user_prompt}")
-        print(f"Prompt tokens: {response.usage.prompt_tokens}")
-        print(f"Response tokens: {response.usage.completion_tokens}")
-
-       
-    if message.tool_calls:
-        for tool_call in message.tool_calls:
-            function_args = json.loads(
-                tool_call.function.arguments or "{}"
+    try:
+        for _ in range(20):
+            response = client.chat.completions.create(
+                model="openrouter/free",
+                messages=messages,
+                tools=available_functions,
             )
-            print(f"Calling function: {tool_call.function.name}({function_args})")
-    else:
-        print(message.content)
+
+            message = response.choices[0].message
+            messages.append(message)
+            
+            if is_verbose:
+                print(f"User prompt: {user_prompt}")
+                print(f"Prompt tokens: {response.usage.prompt_tokens}")
+                print(f"Response tokens: {response.usage.completion_tokens}")
+
+            
+            if message.tool_calls:
+                for tool_call in message.tool_calls:
+                    result_message = call_function(tool_call, is_verbose)
+
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content" : result_message["content"]
+                        }
+                    )
+
+                    if not result_message["content"]:
+                        raise Exception("Tool returned an empty response")
+
+                    if is_verbose:
+                        print(f"-> {result_message['content']}")
+            else:
+                print(message.content)
+                break
+        else:
+            print("Error: Agent reached the maximum number of iterations (20).")
+
+    except Exception as e:
+        return f"Error: {e}"
 
 if __name__ == "__main__":
     main()
