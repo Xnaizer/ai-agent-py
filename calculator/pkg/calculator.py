@@ -8,7 +8,7 @@ class Calculator:
             "*": lambda a, b: a * b,
             "/": lambda a, b: a / b,
         }
-        self.precedence: dict[str, str] = {
+        self.precedence: dict[str, int] = {
             "+" : 1,
             "-" : 1,
             "*" : 2,
