@@ -30,8 +30,8 @@ def main():
     is_verbose = bool(parser.parse_args().verbose)
     
     messages = [
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},
-        {"role": "system", "content": system_prompt}
     ]
 
     response = client.chat.completions.create(
@@ -56,7 +56,7 @@ def main():
             function_args = json.loads(
                 tool_call.function.arguments or "{}"
             )
-        print(f"Calling function: {tool_call.function.name}({function_args})")
+            print(f"Calling function: {tool_call.function.name}({function_args})")
     else:
         print(message.content)
 
